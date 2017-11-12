@@ -49,9 +49,10 @@ void print_bs2_struct_array(bs2_struct *arr, int len) {
     printf("\n");
 
     /* TODO: Print what these point to instead of printing them as addresses. */
-    printf("Bytestring 2: printing each arr[i].ptr as a pointer:\n");
+    printf("Bytestring 2: printing string of i chars starting at at arr[i].ptr:\n");
     for (i = 0; i < len; i++) {
-        printf("%p ", arr[i].ptr);
+	char *str = (char *) (arr[i].ptr);
+        printf("%c", str[i]);
     }
     printf("\n");
 }
@@ -83,28 +84,48 @@ void interp2(void **bytestring, size_t bytes) {
 
 struct mystery_struct {
     /* TODO: rewrite this definition. */
-    char c;
+    int stupidInt;
+    char usefulChar;
+    int moreStupidInts[6];
 } typedef mystery_struct;
 
 void print_mystery(mystery_struct **arr, int len) {
     int i;
     /* TODO: display arr as an array of pointers to mystery_structs. */
+    //printf("Printing bytestring3 as array of %d mystery_structs:\n", len);
+    for (i=0; i < len && arr[i] != NULL; i++) {
+	mystery_struct *ms = arr[i];
+	printf("%c", ms->usefulChar);
+	//for (int j = 0; j < 32; j++) {
+	//    printf("%c ", ms->c[j]);
+	//}
+    }
+    printf("\nDone\n");
 }
 
 void interp3(void **bytestring, size_t bytes) {
-    int len = bytes / sizeof(mystery_struct) + bytes % sizeof(mystery_struct);
+    int len = bytes / sizeof(mystery_struct *);
     print_mystery((mystery_struct **)bytestring, len);
+/*
+    printf("Bytestring 3 starts at: %p\n", bytestring);
+    printf("Bytestring 3 as a pointer array:\n");
+    int len = bytes / sizeof(void *);
+    for (int i = 0; i < len; i++) {
+	printf("%p ", bytestring[i]);
+    }
+    printf("\n");
+    */
 }
 
 int main(int argv, char **argc) {
     int bytes_1;
     void **bytestring_1 = get_bytestring1(&bytes_1);
-    printf("Address of bytestring 1: %p\n", bytestring_1);
-    interp1(bytestring_1, bytes_1);
+    //printf("Address of bytestring 1: %p\n", bytestring_1);
+    //interp1(bytestring_1, bytes_1);
 
     int bytes_2;
     void **bytestring_2 = get_bytestring2(&bytes_2);
-    interp2(bytestring_2, bytes_2);
+    //interp2(bytestring_2, bytes_2);
 
     int bytes_3;
     void ** bytestring_3 = get_bytestring3(&bytes_3);
