@@ -16,12 +16,12 @@ const char* test_descriptions[] = {
     /* 2 */ "single alloc which should fail b/c heap is not big enough",
     /* 3 */ "multiple allocs, verifying no hard-coded block limit",
     /* your SPEC tests */
-    /* 4  */ "your description here",
-    /* 5  */ "your description here",
-    /* 6  */ "your description here",
-    /* 7  */ "your description here",
-    /* 8  */ "your description here",
-    /* 9  */ "your description here",
+    /* 4  */ "resize with null block pointer should act as alloc",
+    /* 5  */ "release with null block pointer should act as NOP",
+    /* 6  */ "alloc return address 8-byte aligned",
+    /* 7  */ "resize change location of block when not possible to increase the size of the current block but there is room elsewhere",
+    /* 8  */ "When resizing to smaller size, contents inside are the same",
+    /* 9  */ "When resize changes location, contents should be preserved",
     /* 10 */ "your description here",
     /* 11 */ "your description here",
     /* 12 */ "your description here",
@@ -174,31 +174,39 @@ int test03() {
 /* Find something that you think heaplame does wrong. Make a test
  * for that thing!
  *
- * FUNCTIONS BEING TESTED:
- * SPECIFICATION BEING TESTED:
- *
+ * FUNCTIONS BEING TESTED: resize
+ * SPECIFICATION BEING TESTED: When a null pointer is passed into the block pointer,
+ * resize should work as hl_alloc
  *
  * MANIFESTATION OF ERROR:
- *
+ * See if hl_resize acts as hl_alloc when block pointer is NULL. If hl_resize returns a NULL pointer,
+ * it should fail. 
  */
 int test04() {
+    
+    char heap[HEAP_SIZE];
+    hl_init(heap, HEAP_SIZE);
 
-    return FAILURE;
+    return  (hl_resize(heap, NULL, HEAP_SIZE/2) != NULL);
 }
 
 /* Find something that you think heaplame does wrong. Make a test
  * for that thing!
  *
- * FUNCTIONS BEING TESTED:
- * SPECIFICATION BEING TESTED:
- *
+ * FUNCTIONS BEING TESTED: release
+ * SPECIFICATION BEING TESTED: 
+ * When release is called with a null block-pointer, it should act as a NOP
  *
  * MANIFESTATION OF ERROR:
- *
+ * 
  */
 int test05() {
+    char heap[HEAP_SIZE];
+    hl_init(heap, HEAP_SIZE);
 
-    return FAILURE;
+    hl_release(heap, NULL);
+
+    return SUCCESS;
 }
 
 /* Find something that you think heaplame does wrong. Make a test
@@ -212,8 +220,12 @@ int test05() {
  *
  */
 int test06() {
+    char heap[HEAP_SIZE];
+    hl_init(heap, HEAP_SIZE);
 
-    return FAILURE;
+    int *array = hl_alloc(heap, HEAP_SIZE/2);
+    
+    return (((uintptr_t) array) % 8 == 0);
 }
 
 /* Find something that you think heaplame does wrong. Make a test
@@ -228,7 +240,20 @@ int test06() {
  */
 int test07() {
 
-    return FAILURE;
+    char heap[HEAP_SIZE];
+    hl_init(heap, HEAP_SIZE);
+
+    int *array = hl_alloc(heap, HEAP_SIZE/4);
+    int *newarray = hl_alloc(heap, HEAP_SIZE/4);
+    
+    printf("array: %p \n", array);
+    printf("newarray: %p \n", newarray);
+
+    int *resizearray = hl_resize(heap, array, HEAP_SIZE/3);
+    
+    printf("resizearray: %p", resizearray);
+    
+    return (array != resizearray);
 }
 
 /* Find something that you think heaplame does wrong. Make a test
@@ -242,8 +267,27 @@ int test07() {
  *
  */
 int test08() {
+     
+    char heap[HEAP_SIZE];
+    hl_init(heap, HEAP_SIZE);
 
-    return FAILURE;
+    char *array = (char *) hl_alloc(heap, HEAP_SIZE/4);
+
+    for (int i =0; i< HEAP_SIZE/4; i++) {
+	array[i] = 'A';
+    }
+
+    char *newarray = (char *) hl_resize(heap, array, HEAP_SIZE/8);
+    
+    bool testfail = SUCCESS;
+
+    for (int j=0; j< HEAP_SIZE/8; j++) {
+	if (array[j] != newarray[j]) {
+	    testfail = NULL;
+	}
+    }
+
+    return testfail;
 }
 
 /* Find something that you think heaplame does wrong. Make a test
@@ -258,7 +302,67 @@ int test08() {
  */
 int test09() {
 
-    return FAILURE;
+    char heap[HEAP_SIZE];
+    hl_init(heap, HEAP_SIZE);
+
+    char *arrayA =(char*) hl_alloc(heap, HEAP_SIZE/8);
+
+    for(int i=0; i< (HEAP_SIZE/8)/sizeof(char) ; i++) {
+	arrayA[i]= 'A';
+	if (i == 0) {
+	   printf("address of arrayA[0] = %p \n", &arrayA[0]);
+	   printf("value of arrayA[0] == %c \n", arrayA[0]);
+        }
+	//printf("%d : %c \n", i, arrayA[i]);
+    }
+
+    char *arrayB = (char*) hl_alloc(heap, HEAP_SIZE/8);
+
+    for (int j=0; j< (HEAP_SIZE/8)/sizeof(char); j++) {
+	arrayB[j] = 'B';
+        //printf("%d : %c \n", j, arrayB[j]);
+    }
+
+    //for (int t=0; t < HEAP_SIZE; t++) {
+	//printf("%d: %c \n", t, heap[t]);
+    //}
+
+    printf("pointer for arrayA before resize: %p \n", arrayA);
+    printf("before resize: arrayA[0] = %c \n", arrayA[0]);
+    printf("before resize arrayA[0] address = %p \n", &arrayA[0]);
+    printf("pointer for arrayB before resize: %p \n", arrayB);
+
+    char *resizeArray = (char *) hl_resize(heap, arrayA, HEAP_SIZE/4);
+    
+    printf("pointer for arrayA: %p \n", arrayA);
+    printf("arrayA[0] = %c \n", arrayA[0]);
+    printf("pointer for arrayB: %p \n", arrayB);
+    printf("pointer for resizeArray:  %p \n", resizeArray);
+    printf("resizeArray[0] = %c \n", resizeArray[0]);
+    
+    bool testfail = SUCCESS;
+
+    //for (int u =0; u < HEAP_SIZE; u++) {
+	//printf("%d: %c \n", u, heap[u]);
+    //}
+    
+    //resizeArray[0] = arrayA[0];
+    
+    for (int k=0; k < (HEAP_SIZE/8)/sizeof(char); k++) {
+	printf("address %p: %d : %c \n", &resizeArray[k], k, resizeArray[k]);
+	if (resizeArray[k] != 'A'){
+	  testfail = NULL;
+	  printf("testfail changed to %d \n", testfail);
+	}
+     }
+    
+    //for (int u=0; u<HEAP_SIZE; u++) {
+	//printf("%d: %c \n", u, heap[u]);
+    //}
+
+    printf("testfail =  %d \n", testfail);
+    
+    return testfail;
 }
 
 /* Find something that you think heaplame does wrong. Make a test
