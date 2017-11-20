@@ -39,9 +39,9 @@ const char* test_descriptions[] = {
     /* 23 */ "your description here",
 };
 
-/* -------------------- PRINT DEBUG FNS ----------------- */
+/* -------------------- PRINT DEBUG MACROS ----------------- */
 
-/* macros for debug message printing
+/* macros for debug message printing. uses fmt string to print out other values
  */
 #ifdef PRINT_DEBUG
 	#define DEBUG_PRINT_1(fmt, v1) printf(fmt, v1)
@@ -52,38 +52,6 @@ const char* test_descriptions[] = {
 	#define DEBUG_PRINT_2(fmt, v1, v2)
 	#define DEBUG_PRINT_3(fmt, v1, v2, v3)
 #endif
-
-/* Print out a message and a pointer value
- */
-void print_debug_pointer(char *msg, void *ptr) {
-#ifdef PRINT_DEBUG
-    printf("%s %p\n", msg, ptr);
-#endif
-}
-
-/* Print out a message and an integer value
- */
-void print_debug_int(char *msg, int i) {
-#ifdef PRINT_DEBUG
-    printf("%s %d\n", msg, i);
-#endif
-}
-
-/* Print out a message and a char value
- */
-void print_debug_int(char *msg, char c) {
-#ifdef PRINT_DEBUG
-    printf("%s %c\n", msg, c);
-#endif
-}
-
-/* Print out a message and an int and a char value
- */
-void print_debug_int_char(char *msg, int i, char c) {
-#ifdef PRINT_DEBUG
-    printf("%s %d %c\n", msg, i, c);
-#endif
-}
 
 
 /* ------------------ COMPLETED SPEC TESTS ------------------------- */
@@ -208,9 +176,8 @@ int test03() {
         else
             break;
     }
-#ifdef PRINT_DEBUG
-    printf("%d blocks (n), then %d blocks (2n) allocated\n", num_blocks, num_blocks2);
-#endif
+
+    DEBUG_PRINT_2("%d blocks (n), then %d blocks (2n) allocated\n", num_blocks, num_blocks2);
 
     // hoping to return SUCCESS (==1)
     return (num_blocks2 > num_blocks);
@@ -293,12 +260,12 @@ int test07() {
     int *array = hl_alloc(heap, HEAP_SIZE/4);
     int *newarray = hl_alloc(heap, HEAP_SIZE/4);
     
-	DEBUG_PRINT_1("array: %p", array);
-	print_debug_pointer("newarray: ", newarray);
+	DEBUG_PRINT_1("array: %p\n", array);
+	DEBUG_PRINT_1("newarray: %p\n", newarray);
 
     int *resizearray = hl_resize(heap, array, HEAP_SIZE/3);
     
- 	print_debug_pointer("resizearray: ", resizearray);
+	DEBUG_PRINT_1("resizearray: %p\n", resizearray);
     
     return (array != resizearray);
 }
@@ -357,58 +324,57 @@ int test09() {
     for(int i=0; i< (HEAP_SIZE/8)/sizeof(char) ; i++) {
 	arrayA[i]= 'A';
 		if (i == 0) {
-			print_debug_pointer("address of arrayA[0] = ", &arrayA[0]);
-			print_debug_char("value of arrayA[0] == ", arrayA[0]);
+			DEBUG_PRINT_1("address of arrayA[0] = %p\n", &arrayA[0]);
+			DEBUG_PRINT_1("value of arrayA[0] = %c\n ", arrayA[0]);
         }
-	print_debug_int_char(" ", i, arrayA[i]);
+	DEBUG_PRINT_2("%d : %c \n", i, arrayA[i]);
     }
 
     char *arrayB = (char*) hl_alloc(heap, HEAP_SIZE/8);
 
     for (int j=0; j< (HEAP_SIZE/8)/sizeof(char); j++) {
-	arrayB[j] = 'B';
-		print_debug_int_char(" ", j, arrayB[j]);
-        //printf("%d : %c \n", j, arrayB[j]);
+		arrayB[j] = 'B';
+		DEBUG_PRINT_2("%d : %c \n", j, arrayA[j]);
     }
 
     //for (int t=0; t < HEAP_SIZE; t++) {
-	//printf("%d: %c \n", t, heap[t]);
+	//DEBUG_PRINT_2("%d: %c \n", t, heap[t]);
     //}
 
-    printf("pointer for arrayA before resize: %p \n", arrayA);
-    printf("before resize: arrayA[0] = %c \n", arrayA[0]);
-    printf("before resize arrayA[0] address = %p \n", &arrayA[0]);
-    printf("pointer for arrayB before resize: %p \n", arrayB);
+    DEBUG_PRINT_1("pointer for arrayA before resize: %p \n", arrayA);
+    DEBUG_PRINT_1("before resize: arrayA[0] = %c \n", arrayA[0]);
+    DEBUG_PRINT_1("before resize arrayA[0] address = %p \n", &arrayA[0]);
+    DEBUG_PRINT_1("pointer for arrayB before resize: %p \n", arrayB);
 
     char *resizeArray = (char *) hl_resize(heap, arrayA, HEAP_SIZE/4);
     
-    printf("pointer for arrayA: %p \n", arrayA);
-    printf("arrayA[0] = %c \n", arrayA[0]);
-    printf("pointer for arrayB: %p \n", arrayB);
-    printf("pointer for resizeArray:  %p \n", resizeArray);
-    printf("resizeArray[0] = %c \n", resizeArray[0]);
+    DEBUG_PRINT_1("pointer for arrayA: %p \n", arrayA);
+    DEBUG_PRINT_1("arrayA[0] = %c \n", arrayA[0]);
+    DEBUG_PRINT_1("pointer for arrayB: %p \n", arrayB);
+    DEBUG_PRINT_1("pointer for resizeArray:  %p \n", resizeArray);
+    DEBUG_PRINT_1("resizeArray[0] = %c \n", resizeArray[0]);
     
     bool testfail = SUCCESS;
 
     //for (int u =0; u < HEAP_SIZE; u++) {
-	//printf("%d: %c \n", u, heap[u]);
+	//	DEBUG_PRINT_2("%d: %c \n", u, heap[u]);
     //}
     
     //resizeArray[0] = arrayA[0];
     
     for (int k=0; k < (HEAP_SIZE/8)/sizeof(char); k++) {
-	printf("address %p: %d : %c \n", &resizeArray[k], k, resizeArray[k]);
-	if (resizeArray[k] != 'A'){
-	  testfail = NULL;
-	  printf("testfail changed to %d \n", testfail);
-	}
+		DEBUG_PRINT_3("address %p: %d : %c \n", &resizeArray[k], k, resizeArray[k]);
+		if (resizeArray[k] != 'A'){
+			testfail = NULL;
+			DEBUG_PRINT_1("testfail changed to %d \n", testfail);
+		}
      }
     
     //for (int u=0; u<HEAP_SIZE; u++) {
-	//printf("%d: %c \n", u, heap[u]);
+	//DEBUG_PRINT_2("%d: %c \n", u, heap[u]);
     //}
 
-    printf("testfail =  %d \n", testfail);
+    DEBUG_PRINT_1("testfail =  %d \n", testfail);
     
     return testfail;
 }
