@@ -44,10 +44,12 @@ const char* test_descriptions[] = {
 /* macros for debug message printing. uses fmt string to print out other values
  */
 #ifdef PRINT_DEBUG
+	#define DEBUG_PRINT(msg) printf(msg)
 	#define DEBUG_PRINT_1(fmt, v1) printf(fmt, v1)
 	#define DEBUG_PRINT_2(fmt, v1, v2) printf(fmt, v1, v2)
 	#define DEBUG_PRINT_3(fmt, v1, v2, v3) printf(fmt, v1, v2, v3)
 #else
+	#define DEBUG_PRINT(msg) printf(msg)
 	#define DEBUG_PRINT_1(fmt, v1)
 	#define DEBUG_PRINT_2(fmt, v1, v2)
 	#define DEBUG_PRINT_3(fmt, v1, v2, v3)
@@ -245,25 +247,29 @@ int test06() {
 /* Find something that you think heaplame does wrong. Make a test
  * for that thing!
  *
- * FUNCTIONS BEING TESTED:
- * SPECIFICATION BEING TESTED:
+ * FUNCTIONS BEING TESTED: hl_resize()
+ * SPECIFICATION BEING TESTED: hl_resize() should change the location of a
+ * block if it is not possible to resize at current location, but there is
+ * room elsewhere.
  *
  *
  * MANIFESTATION OF ERROR:
+ * 1. address of new block has not changed
  *
  */
 int test07() {
-
+	
     char heap[HEAP_SIZE];
     hl_init(heap, HEAP_SIZE);
 
-    int *array = hl_alloc(heap, HEAP_SIZE/4);
-    int *newarray = hl_alloc(heap, HEAP_SIZE/4);
+    char *array = hl_alloc(heap, HEAP_SIZE/4);
+    char *newarray = hl_alloc(heap, HEAP_SIZE/4);
     
 	DEBUG_PRINT_1("array: %p\n", array);
 	DEBUG_PRINT_1("newarray: %p\n", newarray);
 
-    int *resizearray = hl_resize(heap, array, HEAP_SIZE/3);
+	// this resize should force the block to a new location
+    char *resizearray = hl_resize(heap, array, HEAP_SIZE/3);
     
 	DEBUG_PRINT_1("resizearray: %p\n", resizearray);
     
