@@ -623,7 +623,7 @@ int test22() {
 	DEBUG_PRINT_3("block0: %p, block1: %p, block2: %p\n", blocks[0], blocks[1], blocks[2]);
 	
 	if (blocks[2] != NULL) {
-		DEBUG_PRINT_2("End of Heap: %p, End of Block2: %p", &heap[0] + HEAP_SIZE, blocks[2] + blocksize);
+		DEBUG_PRINT_2("End of Heap: %p, End of Block2: %p\n", &heap[0] + HEAP_SIZE, blocks[2] + blocksize);
 	}
 	
 	result = (blocks[2] == NULL) || (blocks[2] + blocksize <= &heap[0] + HEAP_SIZE);
