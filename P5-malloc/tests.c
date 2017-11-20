@@ -35,7 +35,7 @@ const char* test_descriptions[] = {
     /* 19 */ "your description here",
     /* 20 */ "your description here",
     /* 21 */ "your description here",
-    /* 22 */ "checks to see if an alloc works even when not enough room left on heap",
+    /* 22 */ "checks to see if an alloc will return a block of memory that runs past end of heap",
     /* 23 */ "alloc following release should not reuse released memory unless big enough to fit requested bytes",
 };
 
@@ -622,7 +622,11 @@ int test22() {
 	
 	DEBUG_PRINT_3("block0: %p, block1: %p, block2: %p\n", blocks[0], blocks[1], blocks[2]);
 	
-	result = (blocks[0] != NULL && blocks[1] != NULL && blocks[2] == NULL);
+	if (blocks[2] != NULL) {
+		DEBUG_PRINT_2("End of Heap: %p, End of Block2: %p", &heap[0] + HEAP_SIZE, blocks[2] + blocksize);
+	}
+	
+	result = (blocks[0] != NULL && blocks[1] != NULL && (blocks[2] == NULL || blocks[2] + blocksize <= &heap[0] + HEAP_SIZE) );
 	
     return result;
 }
