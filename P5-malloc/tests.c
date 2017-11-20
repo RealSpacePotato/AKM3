@@ -635,5 +635,5 @@ int test23() {
 	
 	bool result = (blocks[2] > blocks[1]);
 
-    return FAILURE;
+    return result;
 }
