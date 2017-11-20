@@ -410,14 +410,14 @@ int test10() {
 	char *blocks[3];
 	
 	// allocate some memory for 3 blocks
-	block[0] = hl_alloc(heap, 128);
-	block[1] = hl_alloc(heap, 128);
-	hl_release(heap, block[0]);
-	block[2] = hl_alloc(heap, 144);
+	blocks[0] = hl_alloc(heap, 128);
+	blocks[1] = hl_alloc(heap, 128);
+	hl_release(heap, blocks[0]);
+	blocks[2] = hl_alloc(heap, 144);
 
-	DEBUG_PRINT_3("block0: %p, block1: %p, block2: %p \n");
+	DEBUG_PRINT_3("block0: %p, block1: %p, block2: %p \n", blocks[0], blocks[1], blocks[2]);
 	
-	bool result = (block[2] > block[1]);
+	bool result = (blocks[2] > blocks[1]);
 
     return result;
 }
