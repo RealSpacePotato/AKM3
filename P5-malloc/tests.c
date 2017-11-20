@@ -508,7 +508,7 @@ int test16() {
 	// fill padding areas above and below heap with values we can 
 	// check at the end to see if any were overwritten
 	memset(memarea, 'A', HEAP_SIZE);
-	memset(memarea + HEAP_SIZE*2, 'B', HEAP_SIZE);
+	memset(memarea + HEAP_SIZE*2, 'Z', HEAP_SIZE);
 
     // zero out the pointer array
     memset(pointers, 0, NPOINTERS*sizeof(char *));
