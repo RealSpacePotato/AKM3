@@ -39,6 +39,53 @@ const char* test_descriptions[] = {
     /* 23 */ "your description here",
 };
 
+/* -------------------- PRINT DEBUG FNS ----------------- */
+
+/* macros for debug message printing
+ */
+#ifdef PRINT_DEBUG
+	#define DEBUG_PRINT_1(fmt, v1) printf(fmt, v1)
+	#define DEBUG_PRINT_2(fmt, v1, v2) printf(fmt, v1, v2)
+	#define DEBUG_PRINT_3(fmt, v1, v2, v3) printf(fmt, v1, v2, v3)
+#else
+	#define DEBUG_PRINT_1(fmt, v1)
+	#define DEBUG_PRINT_2(fmt, v1, v2)
+	#define DEBUG_PRINT_3(fmt, v1, v2, v3)
+#endif
+
+/* Print out a message and a pointer value
+ */
+void print_debug_pointer(char *msg, void *ptr) {
+#ifdef PRINT_DEBUG
+    printf("%s %p\n", msg, ptr);
+#endif
+}
+
+/* Print out a message and an integer value
+ */
+void print_debug_int(char *msg, int i) {
+#ifdef PRINT_DEBUG
+    printf("%s %d\n", msg, i);
+#endif
+}
+
+/* Print out a message and a char value
+ */
+void print_debug_int(char *msg, char c) {
+#ifdef PRINT_DEBUG
+    printf("%s %c\n", msg, c);
+#endif
+}
+
+/* Print out a message and an int and a char value
+ */
+void print_debug_int_char(char *msg, int i, char c) {
+#ifdef PRINT_DEBUG
+    printf("%s %d %c\n", msg, i, c);
+#endif
+}
+
+
 /* ------------------ COMPLETED SPEC TESTS ------------------------- */
 
 /* THIS TEST IS COMPLETE AND WILL NOT BE INCOPORATED INTO YOUR GRADE.
@@ -246,12 +293,12 @@ int test07() {
     int *array = hl_alloc(heap, HEAP_SIZE/4);
     int *newarray = hl_alloc(heap, HEAP_SIZE/4);
     
-    printf("array: %p \n", array);
-    printf("newarray: %p \n", newarray);
+	DEBUG_PRINT_1("array: %p", array);
+	print_debug_pointer("newarray: ", newarray);
 
     int *resizearray = hl_resize(heap, array, HEAP_SIZE/3);
     
-    printf("resizearray: %p", resizearray);
+ 	print_debug_pointer("resizearray: ", resizearray);
     
     return (array != resizearray);
 }
@@ -282,9 +329,9 @@ int test08() {
     bool testfail = SUCCESS;
 
     for (int j=0; j< HEAP_SIZE/8; j++) {
-	if (array[j] != newarray[j]) {
-	    testfail = NULL;
-	}
+		if (array[j] != newarray[j]) {
+			testfail = NULL;
+		}
     }
 
     return testfail;
@@ -309,17 +356,18 @@ int test09() {
 
     for(int i=0; i< (HEAP_SIZE/8)/sizeof(char) ; i++) {
 	arrayA[i]= 'A';
-	if (i == 0) {
-	   printf("address of arrayA[0] = %p \n", &arrayA[0]);
-	   printf("value of arrayA[0] == %c \n", arrayA[0]);
+		if (i == 0) {
+			print_debug_pointer("address of arrayA[0] = ", &arrayA[0]);
+			print_debug_char("value of arrayA[0] == ", arrayA[0]);
         }
-	//printf("%d : %c \n", i, arrayA[i]);
+	print_debug_int_char(" ", i, arrayA[i]);
     }
 
     char *arrayB = (char*) hl_alloc(heap, HEAP_SIZE/8);
 
     for (int j=0; j< (HEAP_SIZE/8)/sizeof(char); j++) {
 	arrayB[j] = 'B';
+		print_debug_int_char(" ", j, arrayB[j]);
         //printf("%d : %c \n", j, arrayB[j]);
     }
 
