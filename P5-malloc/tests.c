@@ -391,35 +391,13 @@ int test09() {
 /* Find something that you think heaplame does wrong. Make a test
  * for that thing!
  *
- * FUNCTIONS BEING TESTED: hl_alloc after hl_release
- * SPECIFICATION BEING TESTED: hl_alloc after an hl_release should
- * not reuse space if it overlaps other allocations
+ * FUNCTIONS BEING TESTED: 
+ * SPECIFICATION BEING TESTED: 
  *
- * MANIFESTATION OF ERROR: hl_alloc returns a pointer to a location
- * that does not have enough free bytes before the next allocated
- * block.
- * The plan here is to allocate 2 blocks of 128 bytes each,
- * then release the first one, then do an alloc for 144 bytes,
- * and see if it allocates space in a way that won't hurt the 2nd block.
+ * MANIFESTATION OF ERROR: 
  */
 int test10() {
-    char heap[HEAP_SIZE];
-    hl_init(heap, HEAP_SIZE);
-	
-	// array of memory blocks we'll allocate and release
-	char *blocks[3];
-	
-	// allocate some memory for 3 blocks
-	blocks[0] = hl_alloc(heap, 128);
-	blocks[1] = hl_alloc(heap, 128);
-	hl_release(heap, blocks[0]);
-	blocks[2] = hl_alloc(heap, 144);
-
-	DEBUG_PRINT_3("block0: %p, block1: %p, block2: %p \n", blocks[0], blocks[1], blocks[2]);
-	
-	bool result = (blocks[2] > blocks[1]);
-
-    return result;
+    return FAILURE;
 }
 
 /* Find something that you think heaplame does wrong. Make a test
@@ -629,13 +607,33 @@ int test22() {
 
 /* Stress the heap library and see if you can break it!
  *
- * FUNCTIONS BEING TESTED:
- * INTEGRITY OR DATA CORRUPTION?
+ * FUNCTIONS BEING TESTED: hl_alloc, hl_release
+ * INTEGRITY OR DATA CORRUPTION? Data corruption
  *
- * MANIFESTATION OF ERROR:
+ * MANIFESTATION OF ERROR: 2 blocks are allocated. the first is released.
+ * another bigger block is allocated. it should not overlap with the 2nd block allocated above.
  *
  */
 int test23() {
+    char heap[HEAP_SIZE];
+    hl_init(heap, HEAP_SIZE);
+	
+	// array of memory blocks we'll allocate and release
+	char *blocks[3];
+	
+	// allocate some memory for 3 blocks
+	blocks[0] = hl_alloc(heap, 128);
+	blocks[1] = hl_alloc(heap, 128);
+	hl_release(heap, blocks[0]);
+	blocks[2] = hl_alloc(heap, 144);
+	
+	// we have a problem if hl_alloc put blocks[2] in the space
+	// it released for block[0], since there is not enough room
+	// there.
+
+	DEBUG_PRINT_3("block0: %p, block1: %p, block2: %p \n", blocks[0], blocks[1], blocks[2]);
+	
+	bool result = (blocks[2] > blocks[1]);
 
     return FAILURE;
 }
