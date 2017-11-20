@@ -539,19 +539,17 @@ int test16() {
 	// check area below the heap
 	for (int i = 0; i < HEAP_SIZE && overwrite_below == 0; i++) {
 		overwrite_below = (memarea[i] != 'A');
-	}
-	
-	if (overwrite_below) {
-		DEBUG_PRINT_3("Memory below heap overwritten. HeapStart: %p, Written Addr: %p, Written Val: %c\n", heap_start, &memarea[i], memarea[i]);
+		if (overwrite_below) {
+			DEBUG_PRINT_3("Memory below heap overwritten. HeapStart: %p, Written Addr: %p, Written Val: %c\n", heap_start, &memarea[i], memarea[i]);
+		}	
 	}
 	
 	// check area above the heap
 	for (int i = HEAP_SIZE*2; i < HEAP_SIZE*3 && overwrite_above == 0; i++) {
 		overwrite_above = (memarea[i] != 'Z');
-	}
-	
-	if (overwrite_above) {
-		DEBUG_PRINT_3("Memory above heap overwritten. HeapStart: %p, Written Addr: %p, Written Val: %c\n", heap_start, &memarea[i], memarea[i]);
+		if (overwrite_above) {
+			DEBUG_PRINT_3("Memory above heap overwritten. HeapStart: %p, Written Addr: %p, Written Val: %c\n", heap_start, &memarea[i], memarea[i]);
+		}
 	}
 	
     return (!overwrite_above && !overwrite_below);
