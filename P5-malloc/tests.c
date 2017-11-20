@@ -495,15 +495,20 @@ int test16() {
     int n_tries    = 10000;
     int block_size = 16;
 
-    // 1024 bytes of padding
+    // 1024 bytes of padding--fill it with Z's, check at end for change
     // --------------------
-    // 1024 bytes of "heap"
+    // 1024 bytes of "heap"--fill all blocks allocated with x's
     // --------------------  <-- heap_start
-    // 1024 bytes of "padding"
+    // 1024 bytes of "padding"--fill it with A's, check at end for change
     char memarea[HEAP_SIZE*3];
 
-    char *heap_start = &memarea[1024]; // heap will start 1024 bytes in
+    char *heap_start = &memarea[HEAP_SIZE]; // heap will start 1024 bytes in
     char *pointers[NPOINTERS];
+	
+	// fill padding areas above and below heap with values we can 
+	// check at the end to see if any were overwritten
+	memset(memarea, 'A', HEAP_SIZE);
+	memset(memarea + HEAP_SIZE*2, 'B', HEAP_SIZE);
 
     // zero out the pointer array
     memset(pointers, 0, NPOINTERS*sizeof(char *));
@@ -514,13 +519,42 @@ int test16() {
         int index = random() % NPOINTERS;
         if (pointers[index] == 0) {
             pointers[index] = hl_alloc(heap_start,  block_size);
+			// if you got a block allocated, fill it with x's
+			if (pointers[index] != NULL) {
+				memset(pointers[index], 'x', block_size);
+			}
         }
         else{
             hl_release(heap_start, pointers[index]);
             pointers[index] = 0;
         }
     }
-    return SUCCESS;
+	
+	// OK after all that allocating, releasing and writing, check
+	// to see if we ever wrote beyond the top or bottom of the memory
+	// area allocated for the heap.
+	bool overwrite_below = 0;
+	bool overwrite_above = 0;
+	
+	// check area below the heap
+	for (int i = 0; i < HEAP_SIZE && overwrite_below == 0; i++) {
+		overwrite_below = (memarea[i] != 'A');
+	}
+	
+	if (overwrite_below) {
+		DEBUG_PRINT_2("Memory below heap overwritten. HeapStart: %p, Written Addr: %p, Written Val: %c\n", heap_start, &memarea[i], memarea[i]);
+	}
+	
+	// check area above the heap
+	for (int i = HEAP_SIZE*2; i < HEAP_SIZE*3 && overwrite_above == 0; i++) {
+		overwrite_above = (memarea[i] != 'Z');
+	}
+	
+	if (overwrite_above) {
+		DEBUG_PRINT_2("Memory above heap overwritten. HeapStart: %p, Written Addr: %p, Written Val: %c\n", heap_start, &memarea[i], memarea[i]);
+	}
+	
+    return (!overwrite_above && !overwrite_below);
 }
 
 /* Stress the heap library and see if you can break it!
