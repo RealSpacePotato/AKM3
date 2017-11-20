@@ -391,16 +391,35 @@ int test09() {
 /* Find something that you think heaplame does wrong. Make a test
  * for that thing!
  *
- * FUNCTIONS BEING TESTED:
- * SPECIFICATION BEING TESTED:
+ * FUNCTIONS BEING TESTED: hl_alloc after hl_release
+ * SPECIFICATION BEING TESTED: hl_alloc after an hl_release should
+ * not reuse space if it overlaps other allocations
  *
- *
- * MANIFESTATION OF ERROR:
- *
+ * MANIFESTATION OF ERROR: hl_alloc returns a pointer to a location
+ * that does not have enough free bytes before the next allocated
+ * block.
+ * The plan here is to allocate 2 blocks of 128 bytes each,
+ * then release the first one, then do an alloc for 144 bytes,
+ * and see if it allocates space in a way that won't hurt the 2nd block.
  */
 int test10() {
+    char heap[HEAP_SIZE];
+    hl_init(heap, HEAP_SIZE);
+	
+	// array of memory blocks we'll allocate and release
+	char *blocks[3];
+	
+	// allocate some memory for 3 blocks
+	block[0] = hl_alloc(heap, 128);
+	block[1] = hl_alloc(heap, 128);
+	hl_release(heap, block[0]);
+	block[2] = hl_alloc(heap, 144);
 
-    return FAILURE;
+	DEBUG_PRINT_3("block0: %p, block1: %p, block2: %p \n");
+	
+	bool result = (block[2] > block[1]);
+
+    return result;
 }
 
 /* Find something that you think heaplame does wrong. Make a test
@@ -528,7 +547,7 @@ int test16() {
 
 /* Stress the heap library and see if you can break it!
  *
- * FUNCTIONS BEING TESTED:
+ * FUNCTIONS BEING TESTED: 
  * INTEGRITY OR DATA CORRUPTION?
  *
  * MANIFESTATION OF ERROR:
