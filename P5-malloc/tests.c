@@ -493,7 +493,7 @@ int test15() {
  */
 int test16() {
     int n_tries    = 10000;
-    int block_size = 16;
+    int block_size = 220;
 
     // 1024 bytes of padding--fill it with Z's, check at end for change
     // --------------------
