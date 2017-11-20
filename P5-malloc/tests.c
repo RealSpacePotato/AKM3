@@ -39,7 +39,7 @@ const char* test_descriptions[] = {
     /* 23 */ "your description here",
 };
 
-/* -------------------- PRINT DEBUG MACROS ----------------- */
+/* -------------------- PRINT DEBUG FNS ----------------- */
 
 /* macros for debug message printing. uses fmt string to print out other values
  */
@@ -263,12 +263,15 @@ int test07() {
     hl_init(heap, HEAP_SIZE);
 
     char *array = hl_alloc(heap, HEAP_SIZE/4);
+	array[0] = '1';
+	
     char *newarray = hl_alloc(heap, HEAP_SIZE/4);
+	newarray[0] = '2';
     
 	DEBUG_PRINT_1("array: %p\n", array);
 	DEBUG_PRINT_1("newarray: %p\n", newarray);
 
-	// this resize should force the block to a new location
+	// this resize should force the block to a new location past newarray
     char *resizearray = hl_resize(heap, array, HEAP_SIZE/3);
     
 	DEBUG_PRINT_1("resizearray: %p\n", resizearray);
