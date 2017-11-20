@@ -22,7 +22,7 @@ const char* test_descriptions[] = {
     /* 7  */ "resize change location of block when not possible to increase the size of the current block but there is room elsewhere",
     /* 8  */ "When resizing to smaller size, contents inside are the same",
     /* 9  */ "When resize changes location, contents should be preserved",
-    /* 10 */ "alloc following release should not reuse released memory unless big enough to fit requested bytes",
+    /* 10 */ "your description here",
     /* 11 */ "your description here",
     /* 12 */ "your description here",
     /* 13 */ "your description here",
@@ -35,8 +35,8 @@ const char* test_descriptions[] = {
     /* 19 */ "your description here",
     /* 20 */ "your description here",
     /* 21 */ "your description here",
-    /* 22 */ "your description here",
-    /* 23 */ "your description here",
+    /* 22 */ "checks to see if an alloc works even when not enough room left on heap",
+    /* 23 */ "alloc following release should not reuse released memory unless big enough to fit requested bytes",
 };
 
 /* -------------------- PRINT DEBUG FNS ----------------- */
@@ -593,15 +593,38 @@ int test21() {
 
 /* Stress the heap library and see if you can break it!
  *
- * FUNCTIONS BEING TESTED:
- * INTEGRITY OR DATA CORRUPTION?
+ * FUNCTIONS BEING TESTED: hl_alloc
+ * INTEGRITY OR DATA CORRUPTION? Data corruption
  *
- * MANIFESTATION OF ERROR:
+ * MANIFESTATION OF ERROR: we attempt to allocate more memory than
+ * heap has space for. if the third alloc gets a non-null result,
+ * the heap manager has allocated a block of memory that will
+ * go beyond the end of the heap.
  *
  */
 int test22() {
-
-    return FAILURE;
+    char heap[HEAP_SIZE];
+    hl_init(heap, HEAP_SIZE);
+	bool result = FAILURE;
+	
+	// we'll use a block size that we should be able to safely
+	// allocate 2 of, but not 3
+	int blocksize = HEAP_SIZE/2 - 128;
+	
+	// array of memory blocks we'll allocate and release
+	char *blocks[3];
+	
+	// first two should get valid pointers. third should not, because
+	// there is not enough room
+	blocks[0] = hl_alloc(heap, blocksize);
+	blocks[1] = hl_alloc(heap, blocksize);
+	blocks[2] = hl_alloc(heap, blocksize);
+	
+	DEBUG_PRINT_3("block0: %p, block1: %p, block2: %p\n", blocks[0], blocks[1], blocks[2]);
+	
+	result = (blocks[0] != null && blocks[1] != null && blocks[2] == null);
+	
+    return result;
 }
 
 
