@@ -622,7 +622,7 @@ int test22() {
 	
 	DEBUG_PRINT_3("block0: %p, block1: %p, block2: %p\n", blocks[0], blocks[1], blocks[2]);
 	
-	result = (blocks[0] != null && blocks[1] != null && blocks[2] == null);
+	result = (blocks[0] != NULL && blocks[1] != NULL && blocks[2] == NULL);
 	
     return result;
 }
