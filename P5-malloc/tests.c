@@ -22,7 +22,7 @@ const char* test_descriptions[] = {
     /* 7  */ "resize change location of block when not possible to increase the size of the current block but there is room elsewhere",
     /* 8  */ "When resizing to smaller size, contents inside are the same",
     /* 9  */ "When resize changes location, contents should be preserved",
-    /* 10 */ "your description here",
+    /* 10 */ "alloc following release should not reuse released memory unless big enough to fit requested bytes",
     /* 11 */ "your description here",
     /* 12 */ "your description here",
     /* 13 */ "your description here",
