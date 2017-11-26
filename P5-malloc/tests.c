@@ -10,6 +10,7 @@
 
 // TODO: Add test descriptions as you add more tests...
 const char* test_descriptions[] = {
+    
     /* our SPEC tests */
     /* 0 */ "single init, should return without error",
     /* 1 */ "single init then single alloc, should pass",
@@ -121,7 +122,7 @@ int test01() {
  * Note: this shows you how to create a test that should fail.
  *
  * Surely it would be a good idea to test this SPEC with more than
- * just 1 call to alloc, no? 
+ * just 1 call to alloc, no?
  */
 int test02() {
 
@@ -199,7 +200,7 @@ int test03() {
  * it should fail.
  */
 int test04() {
-    
+
     char heap[HEAP_SIZE];
     hl_init(heap, HEAP_SIZE);
 
@@ -215,7 +216,7 @@ int test04() {
  *
  * MANIFESTATION OF ERROR:
  * This test is designed to see with release with a null pointer acts as a NOP. If hl_release releases
- * some block in memory, the library is flawed. 
+ * some block in memory, the library is flawed.
  */
 int test05() {
     char heap[HEAP_SIZE];
@@ -237,12 +238,31 @@ int test05() {
  * If the return address of hl_alloc is not 8-byte aligned, the library is flawed.
  */
 int test06() {
-    char heap[HEAP_SIZE];
-    hl_init(heap, HEAP_SIZE);
-
-    int *array = hl_alloc(heap, HEAP_SIZE/2);
+    char data[2*HEAP_SIZE+32];
+    void *heap = NULL;
     
-    return (((uintptr_t) array) % 8 == 0);
+    // do this test with 8 different heaps, each one
+    // started with a different alignment
+    bool hasnt_failed_yet = true;
+    for (int i = 0; i < 8 && hasnt_failed_yet; i++) {
+        // start heap at i bytes offset from 8 byte boundary
+        heap = &data[i];
+        hl_init(heap, 2*HEAP_SIZE);
+        DEBUG_PRINT_1("new heap offset = %d\n", i);
+        
+        // now alloc various sized blocks, and check each
+        // for alignment
+        for (int j = 1; j < 42 && hasnt_failed_yet; j++) {
+            DEBUG_PRINT_1("-about to hl_alloc %d bytes...\n", j);
+            char *ptr = hl_alloc(heap, j);
+            DEBUG_PRINT_1("-hl_alloc returned: %p\n", ptr);
+            if (ptr) {
+                hasnt_failed_yet = (((uintptr_t) ptr) % 8 == 0);
+            }
+        }
+    }
+
+    return hasnt_failed_yet;
 }
 
 /* Find something that you think heaplame does wrong. Make a test
@@ -309,7 +329,7 @@ int test08() {
  * When resizes changes location of pointer in heap, the contents should be preserved.
  *
  * MANIFESTATION OF ERROR:
- * If the contents differ after resize is called, the library is flawed. 
+ * If the contents differ after resize is called, the library is flawed.
  */
 int test09() {
 
@@ -353,11 +373,16 @@ int test09() {
  */
 int test10() {
 
-    char heap[HEAP_SIZE];
-    hl_init(heap, HEAP_SIZE);
+    char data[HEAP_SIZE*2];
+    
+    // start heap at 1 byte offset from 8-byte align point
+    int offset = (9 - (((uintptr_t)&data[0]) % 8)) % 8;
+    //offset = 0;
+    void *heap = &data[offset];
+    hl_init(heap, HEAP_SIZE*2);
 
     int *array = hl_alloc(heap,HEAP_SIZE/2);
-    
+
     int *newarray = hl_resize(heap, array, (3*HEAP_SIZE)/4);
 
     return (((uintptr_t) newarray) % 8 == 0);
@@ -376,7 +401,6 @@ int test10() {
 int test11() {
     char heap[MIN_HEAP_SIZE-1];
     hl_init(heap, MIN_HEAP_SIZE-1);
-
 
      return SUCCESS;
 }
@@ -447,9 +471,9 @@ int test15() {
 /* ------------------ STRESS TESTS ------------------------- */
 
 /* THIS TEST IS NOT FINISHED. It is a stress test, but it does not
- * actually test to see whether the library or the user writes 
+ * actually test to see whether the library or the user writes
  * past the heap. You are encouraged to complete this test.
- * 
+ *
  * FUNCTIONS BEING TESTED: alloc, free
  * SPECIFICATION BEING TESTED:
  * The library should not give user "permission" to write off the end
@@ -461,8 +485,8 @@ int test15() {
  *
  */
 int test16() {
-int n_tries    = 10000;
-    int block_size = 220;
+    int n_tries    = 10000;
+    int block_size = 22;
 
     // 1024 bytes of padding--fill it with Z's, check at end for change
     // --------------------
@@ -474,7 +498,7 @@ int n_tries    = 10000;
     char *heap_start = &memarea[HEAP_SIZE]; // heap will start 1024 bytes in
     char *pointers[NPOINTERS];
 
-	// fill padding areas above and below heap with values we can 
+	// fill padding areas above and below heap with values we can
 	// check at the end to see if any were overwritten
 	memset(memarea, 'A', HEAP_SIZE);
 	memset(memarea + HEAP_SIZE*2, 'Z', HEAP_SIZE);
@@ -487,7 +511,7 @@ int n_tries    = 10000;
     for (int i = 0; i < n_tries; i++) {
         int index = random() % NPOINTERS;
         if (pointers[index] == 0) {
-            pointers[index] = hl_alloc(heap_start,  block_size);
+            pointers[index] = hl_alloc(heap_start,  block_size + (random() % 20));
 			// if you got a block allocated, fill it with x's
 			if (pointers[index] != NULL) {
 				memset(pointers[index], 'x', block_size);
@@ -528,7 +552,7 @@ int n_tries    = 10000;
  *
  * FUNCTIONS BEING TESTED: alloc and resize
  * INTEGRITY OR DATA CORRUPTION? STRUCTURAL INTEGRITY
- * 
+ *
  * MANIFESTATION OF ERROR:
  * At some point a field in the heap thought to contain a pointer will no longer contain a valid address.
  */
@@ -599,7 +623,7 @@ int test18() {
  * INTEGRITY OR DATA CORRUPTION? Data Integrity
  *
  * MANIFESTATION OF ERROR:
- * The library itself writes something into the block portion of the heap, which it should never do 
+ * The library itself writes something into the block portion of the heap, which it should never do
  * unless that block has been freed by the user
  */
 int test19() {
@@ -666,7 +690,7 @@ int test19() {
 int test20() {
 
     int n_tries = 10000;
-    int block_size = 40;
+    int block_size = 41;
 
     char heap[HEAP_SIZE*3];
     char *pointers[NPOINTERS];

@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdint.h>
-#include "heaplib.h"
+#include <stdbool.h>
 #include "tests.c"
 
 /* Some ASCII color codes that may be useful for debugging! */
