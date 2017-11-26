@@ -7,7 +7,6 @@
 #include "tests.c"
 
 /* Some ASCII color codes that may be useful for debugging! */
-/*
 #define RED     "\x1B[31m"
 #define GREEN   "\x1B[32m"
 #define YELLOW  "\x1B[33m"
@@ -16,16 +15,6 @@
 #define CYAN    "\x1B[36m"
 #define WHITE   "\x1B[37m"
 #define RESET   "\x1B[0m"
-*/
-
-#define RED     "*RED*"
-#define GREEN   "*GREEN*"
-#define YELLOW  "*YELLOW*"
-#define BLUE    "*BLUE*"
-#define MAGENTA "*MAGENTA*"
-#define CYAN    "*CYAN*"
-#define WHITE   "*WHITE*"
-#define RESET   "*RESET*"
 
 #define EMPTY_TEST "EMPTY TEST"
 
