@@ -23,8 +23,8 @@ const char* test_descriptions[] = {
     /* 8  */ "When resizing to smaller size, contents inside are the same",
     /* 9  */ "When resize changes location, contents should be preserved",
     /* 10 */ "resize return address 8-byte aligned",
-    /* 11 */ "your description here",
-    /* 12 */ "your description here",
+    /* 11 */ "init with heap size too small. should exit(1)",
+    /* 12 */ "init with null heap pointer, should exit(1)",
     /* 13 */ "your description here",
     /* 14 */ "your description here",
     /* 15 */ "your description here",
@@ -366,31 +366,37 @@ int test10() {
 /* Find something that you think heaplame does wrong. Make a test
  * for that thing!
  *
- * FUNCTIONS BEING TESTED:
- * SPECIFICATION BEING TESTED:
+ * FUNCTIONS BEING TESTED: hl_init()
+ * SPECIFICATION BEING TESTED: exits if heap size lower than min
  *
  *
- * MANIFESTATION OF ERROR:
+ * MANIFESTATION OF ERROR: program should exit
  *
  */
 int test11() {
+    char heap[MIN_HEAP_SIZE-1];
+    hl_init(heap, MIN_HEAP_SIZE-1);
 
-     return FAILURE;
+
+     return SUCCESS;
 }
 
 /* Find something that you think heaplame does wrong. Make a test
  * for that thing!
  *
- * FUNCTIONS BEING TESTED:
- * SPECIFICATION BEING TESTED:
+ * FUNCTIONS BEING TESTED: hl_init
+ * SPECIFICATION BEING TESTED: non-graceful fail if heap* is NULL
  *
  *
- * MANIFESTATION OF ERROR:
+ * MANIFESTATION OF ERROR: should exit(1)
  *
  */
 int test12() {
+    char *bad_heap_arg = NULL;
 
-    return FAILURE;
+    hl_init(bad_heap_arg, MIN_HEAP_SIZE);
+
+    return SUCCESS;
 }
 
 /* Find something that you think heaplame does wrong. Make a test
