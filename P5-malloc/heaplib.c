@@ -315,10 +315,6 @@ void consolidate_free_blocks(heap_header_t *hdr) {
  *
  */
 void hl_init(void *heap, unsigned int heap_size) {
-    DEBUG_PRINT_2("init_heap--addr %p, size %u, ", heap, heap_size);
-    DEBUG_PRINT_2("heaphdr size: %lu, blockhdr size: %lu\n", sizeof(heap_header_t), sizeof(block_info_t));
-    DEBUG_PRINT_2("unsigned int size: %lu, blockinfo ptr size: %lu\n", sizeof(unsigned int), sizeof((block_info_t *)));
-
     // this would be our non-graceful failure for bad input
     if (heap == NULL || heap_size < MIN_HEAP_SIZE) {
         return;
@@ -332,6 +328,10 @@ void hl_init(void *heap, unsigned int heap_size) {
 
     hdr->heap_size = heap_size;
     hdr->first_used_block = NULL;
+    DEBUG_PRINT_2("init_heap--addr %p, size %u, ", heap, heap_size);
+    DEBUG_PRINT_2("heaphdr size: %lu, blockhdr size: %lu\n", sizeof(heap_header_t), sizeof(block_info_t));
+    DEBUG_PRINT_2("unsigned int size: %lu, blockinfo ptr size: %lu\n", sizeof(unsigned int), sizeof(hdr->first_used_block));
+
 
     // right now we have one huge free block. it starts at the
     // first aligned memory location after the heap header, and
