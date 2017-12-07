@@ -315,6 +315,9 @@ void consolidate_free_blocks(heap_header_t *hdr) {
  *
  */
 void hl_init(void *heap, unsigned int heap_size) {
+    DEBUG_PRINT_2("init_heap--addr %p, size %u, ", heap, heap_size);
+    DEBUG_PRINT_2("heaphdr size: %lu, blockhdr size: %lu\n", sizeof(heap_header_t), sizeof(block_info_t));
+
     // this would be our non-graceful failure for bad input
     if (heap == NULL || heap_size < MIN_HEAP_SIZE) {
         return;
@@ -328,10 +331,6 @@ void hl_init(void *heap, unsigned int heap_size) {
 
     hdr->heap_size = heap_size;
     hdr->first_used_block = NULL;
-    DEBUG_PRINT_2("init_heap--addr %p, size %u, ", heap, heap_size);
-    DEBUG_PRINT_2("heaphdr size: %lu, blockhdr size: %lu\n", sizeof(heap_header_t), sizeof(block_info_t));
-    DEBUG_PRINT_2("unsigned int size: %lu, blockinfo ptr size: %lu\n", sizeof(unsigned int), sizeof(hdr->first_used_block));
-
 
     // right now we have one huge free block. it starts at the
     // first aligned memory location after the heap header, and
@@ -504,9 +503,10 @@ void *hl_resize(void *heap, void *block, unsigned int new_size) {
 
     // if we can't find legit block info for the block ptr, return
     block_info_t *block_info = get_block_info_for(hdr, block);
-    if (block_info == NULL)
+    if (block_info == NULL) {
         DEBUG_PRINT_1("Resize could not find %p\n", block);
-    return NULL;
+        return NULL;
+    }
 
     // OK, now we probably have legit input values. 
     void *return_this = NULL;
