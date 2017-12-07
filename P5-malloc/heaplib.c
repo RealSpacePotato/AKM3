@@ -9,20 +9,22 @@
 // -----------DEFINITIONS-----------------
 
 // header info for each block of memory we're managing
-// we'll be using these in doubly linked lists
+// we'll be using these in linked lists
+
 typedef struct _block_info_t {
-    unsigned int data_size;   // amount of user data--doesn't include block info
-    struct _block_info_t *prev_block;
+    unsigned int data_size; // amount of user data--doesn't include block info
+    //struct _block_info_t *prev_block;
     struct _block_info_t *next_block;
-    char *data; // this is the pointer to the user data
+    //char *data; // this is the pointer to the user data
 } block_info_t;
 
 // main struct for top level mem manager info
+
 typedef struct _heap_header_t {
     unsigned int heap_size;
     block_info_t *first_free_block;
     block_info_t *first_used_block;
-} heap_header_t ;
+} heap_header_t;
 
 /* Useful shorthand: casts a pointer to a (char *) before adding/subtracting */
 #define ADD_BYTES(base_addr, num_bytes) (((char *)(base_addr)) + (num_bytes))
@@ -31,23 +33,34 @@ typedef struct _heap_header_t {
 /* Given a target address, returns the next properly aligned address. same if
  * input address is already aligned.
  */
-#define ALIGN_UP(addr) ADD_BYTES(addr, ((ALIGNMENT - (((uintptr_t)addr) % ALIGNMENT)) % ALIGNMENT))
+#define ALIGN_UP(addr) ADD_BYTES((addr), ((ALIGNMENT - (((uintptr_t)(addr)) % ALIGNMENT)) % ALIGNMENT))
+#define ALIGN_UP_2(addr) ((char*) (((((uintptr_t) (addr)) + ALIGNMENT - 1) / ALIGNMENT) * ALIGNMENT))
+
+/* we only want to actually use block data sizes that are even multiples of
+ * ALIGNMENT, so this rounds up a size to be a multiple of ALIGNMENT if needed.
+ */
+#define ALIGNED_SIZE(nbytes) ( (((nbytes) + ALIGNMENT - 1) / ALIGNMENT) * ALIGNMENT )
+
+/* Given a ptr to a block_data_t, returns address where the actual data starts
+ */
+#define BLOCK_DATA(block_info_ptr) ADD_BYTES(block_info_ptr, sizeof(block_info_t))
 
 /* -------------------- PRINT DEBUG FNS ----------------- */
 
 #ifdef PRINT_DEBUG
-	#define DEBUG_PRINT(msg) printf(msg)
-	#define DEBUG_PRINT_1(fmt, v1) printf(fmt, v1)
-	#define DEBUG_PRINT_2(fmt, v1, v2) printf(fmt, v1, v2)
-	#define DEBUG_PRINT_3(fmt, v1, v2, v3) printf(fmt, v1, v2, v3)
+#define DEBUG_PRINT(msg) printf(msg)
+#define DEBUG_PRINT_1(fmt, v1) printf(fmt, v1)
+#define DEBUG_PRINT_2(fmt, v1, v2) printf(fmt, v1, v2)
+#define DEBUG_PRINT_3(fmt, v1, v2, v3) printf(fmt, v1, v2, v3)
 #else
-	#define DEBUG_PRINT(msg) printf(msg)
-	#define DEBUG_PRINT_1(fmt, v1)
-	#define DEBUG_PRINT_2(fmt, v1, v2)
-	#define DEBUG_PRINT_3(fmt, v1, v2, v3)
+#define DEBUG_PRINT(msg) printf(msg)
+#define DEBUG_PRINT_1(fmt, v1)
+#define DEBUG_PRINT_2(fmt, v1, v2)
+#define DEBUG_PRINT_3(fmt, v1, v2, v3)
 #endif
 
 // printf some overall heap info
+
 void print_debug_heap_state(char *msg, heap_header_t *hdr) {
 #ifdef PRINT_DEBUG
     // intro msg, then size and addr
@@ -90,181 +103,187 @@ void print_debug_heap_state(char *msg, heap_header_t *hdr) {
 // given a user data block pointer, try to find the block_info
 // that goes with the pointer. return NULL for bogus values.
 //
+
 block_info_t *get_block_info_for(heap_header_t *hdr, void *block) {
     // return NULL immediately for obviously bogus pointer
-    if (((char *)block) < ADD_BYTES(hdr, sizeof(heap_header_t)) ||
-            ((char *)block) >= ADD_BYTES(hdr, hdr->heap_size)) {
+    if (((char *) block) < ADD_BYTES(hdr, sizeof (heap_header_t)) ||
+            ((char *) block) >= ADD_BYTES(hdr, hdr->heap_size)) {
         return NULL;
     }
-    
+
     // OK, might be legit. For now just do fast, easy way.
     // Will cause violent death if ptr is bogus though.
     // Maybe be more careful by doing a search?
-    return (block_info_t*) SUB_BYTES(block, sizeof(block_info_t));
+    return (block_info_t*) SUB_BYTES(block, sizeof (block_info_t));
 }
 
-// given a requested block size, returns pointer to the "best"
-// free block to use for this request.
-//
-block_info_t *find_best_free_block(heap_header_t *hdr, unsigned int desired_block_size){
-    
-    DEBUG_PRINT_1("In find_best_free_block, size = %u\n", desired_block_size);
-
-    // stupid for now. just returns first free block that fits
-    block_info_t *try_this = hdr->first_free_block;
-    block_info_t *best_block = NULL;
-
-    while (try_this != NULL && best_block == NULL) {
-        if (try_this->data_size >= desired_block_size) {
-            best_block = try_this;
-        } else {
-            try_this = try_this->next_block;
-        }
-    }
-
-    return best_block;
-}
 
 /* this removes the given free block from the list of
  * free blocks in hdr. does nothing if either arg is null.
  */
-void remove_from_free_list(heap_header_t *hdr, block_info_t *remove_this) {
- 
+/*
+ void remove_from_free_list(heap_header_t *hdr, block_info_t *remove_this) {
+
     // do nothing for sketchy inputs
     if (hdr == NULL || remove_this == NULL) return;
-    
-// if it's the head of the list, its next block is now the head
+
+    // if it's the head of the list, its next block is now the head
     if (remove_this == hdr->first_free_block) {
         hdr->first_free_block = remove_this->next_block;
-        if (hdr->first_free_block != NULL){
-            hdr->first_free_block->prev_block = NULL;
+        if (hdr->first_free_block != NULL) {
+            //hdr->first_free_block->prev_block = NULL;
         }
     } else {
-        // normal case is to adjust prev and next blocks to 
-        // point directly at each other, skipping over remove_this
+        //normal case is to adjust links to 
+        // skip over remove_this
         if (remove_this->prev_block != NULL) {
             remove_this->prev_block->next_block = remove_this->next_block;
         }
-       if (remove_this->next_block != NULL) {
+        if (remove_this->next_block != NULL) {
             remove_this->next_block->prev_block = remove_this->prev_block;
         }
+    }
+}
+ */
+
+/* this removes the given free block from the list of
+ * used blocks in hdr. does nothing if either arg is null or 
+ * if it can't find the specified block
+ */
+void remove_from_used_list(heap_header_t *hdr, void *block_data) {
+
+    // do nothing for sketchy inputs
+    if (hdr == NULL || block_data == NULL) return;
+
+    // find the indicated block of memory
+    block_info_t *check_block = hdr->first_used_block;
+    block_info_t *prev = NULL;
+
+    while (check_block != NULL && BLOCK_DATA(check_block) != block_data) {
+        prev = check_block;
+        check_block = check_block->next_block;
+    }
+
+    // see if we found the block_info for this block_data
+    if (check_block != NULL) {
+
+        // if it's the head of the list, its next block is now the head
+        if (check_block == hdr->first_used_block) {
+            hdr->first_used_block = check_block->next_block;
+        } else {
+            // normal case: make link from prev skip over this block
+            prev->next_block = check_block->next_block;
+        }
+
     }
 }
 
-/* this removes the given free block from the list of
- * used blocks in hdr. does nothing if either arg is null
- */
-void remove_from_used_list(heap_header_t *hdr, block_info_t *remove_this) {
-    
-    // do nothing for sketchy inputs
-    if (hdr == NULL || remove_this == NULL) return;
-    
-    // if it's the head of the list, its next block is now the head
-    if (remove_this == hdr->first_used_block) {
-        hdr->first_used_block = remove_this->next_block;
-        if (hdr->first_used_block != NULL) {
-            hdr->first_used_block->prev_block = NULL;
-        }
-    } else {
-        // normal case is to adjust prev and next blocks to 
-        // point directly at each other, skipping over remove_this
-        if (remove_this->prev_block != NULL) {
-            remove_this->prev_block->next_block = remove_this->next_block;
-        }
-       if (remove_this->next_block != NULL) {
-            remove_this->next_block->prev_block = remove_this->prev_block;
-        }
-    }
-}
 /* this adds the given free block to the list of
  * free blocks in hdr. 
- * maintains list in lo->hi address order. this will
- * be useful when we need to consolidate free blocks
- * to make bigger blocks available again
+ * maintains list in lo->hi address order. when adding 
+ * a block to the list, we check to see if it can be merged into 
+ * a bigger free block with the next and/or previous blocks
+ * in the list.
  */
 void add_to_free_list(heap_header_t *hdr, block_info_t *add_this) {
+    DEBUG_PRINT_2("Add to free. add_this: %p, size: %d\n", add_this, add_this->data_size);
+
     // let's do super easy case first--the list is empty
     block_info_t *check_this = hdr->first_free_block;
     if (check_this == NULL) {
         hdr->first_free_block = add_this;
-        add_this->prev_block = NULL;
         add_this->next_block = NULL;
     } else {
         // ok, there's at least one block in the free list.
         // walk down the list until we find a block with
-        // a higher address than add_this, or get to end. 
+        // a higher address than add_this, or get to the end. 
         // insert there.
+        block_info_t *prev = NULL;
         while (check_this->next_block != NULL && check_this < add_this) {
+            prev = check_this;
             check_this = check_this->next_block;
         }
         // when we get here, check_this is the last in the 
         // chain and/or check_list is at a higher addr than add_this
         if (check_this < add_this) {
             // insert add_this after check_this
-            add_this->prev_block = check_this;
             add_this->next_block = check_this->next_block;
             check_this->next_block = add_this;
-            if (add_this->next_block != NULL) {
-                add_this->next_block->prev_block = add_this;
-            }
+
         } else {
             // insert add_this before check_this
             add_this->next_block = check_this;
-            add_this->prev_block = check_this->prev_block;
-            check_this->prev_block = add_this;
-            if (add_this->prev_block == NULL) {
-                // it's the new head of the list
+
+            if (prev == NULL) {
+                // add_this is the new head of the list
                 hdr->first_free_block = add_this;
             } else {
                 // if there was a previous block, set its next to add_this
-                add_this->prev_block->next_block = add_this;
+                prev->next_block = add_this;
+            }
+        }
+
+        // when we get here, add_this has been put in its correct location
+        // in the list. now see if we can merge it with previous or next
+        // free blocks
+        //
+        block_info_t *merge_block = add_this;
+
+        // try merge with previous
+        //
+        if (prev != NULL) {
+            if ((char*) add_this == ADD_BYTES(BLOCK_DATA(prev), prev->data_size)) {
+
+                // merge add_this with previous
+                merge_block = prev;
+                DEBUG_PRINT_2("merge prev: %p size %d ", add_this, add_this->data_size);
+                DEBUG_PRINT_2("with %p, size %d\n", merge_block, merge_block->data_size);
+                merge_block->data_size += add_this->data_size + sizeof (block_info_t);
+                merge_block->next_block = add_this->next_block;
+            }
+        }
+
+        // merge_block is now the results of our attempt to merge with
+        // the previous block. may be a new, bigger block, or may just be
+        // add_this all by itself. In either case,
+        // see if we can merge what we have with the next block.
+        if (merge_block->next_block != NULL) {
+            if ((char *) merge_block->next_block ==
+                    ADD_BYTES(BLOCK_DATA(merge_block), merge_block->data_size)) {
+
+                // merge with next block
+                DEBUG_PRINT_2("merge next %p, size %d ", merge_block, merge_block->data_size);
+                DEBUG_PRINT_2("with %p, size %d\n", merge_block->next_block,
+                        merge_block->next_block->data_size);
+                merge_block->data_size += merge_block->next_block->data_size + sizeof (block_info_t);
+                merge_block->next_block = merge_block->next_block->next_block;
             }
         }
     }
-
-    /* old simpler version commented out
-    // pretty straightforward since we're adding at head of list
-    add_this->prev_block = NULL; // head of the list duh
-    add_this->next_block = hdr->first_free_block;
-    if (add_this->next_block != NULL) {
-        add_this->next_block->prev_block = add_this;
-    }
-    hdr->first_free_block = add_this;
-    */
-}
-
-/* this adds the given used block to the list of
- * used blocks in hdr. currently just adds at head.
- * might do something clever later...?
- */
-void add_to_used_list(heap_header_t *hdr, block_info_t *add_this) {
-    // pretty straightforward since we're adding at head of list
-    add_this->prev_block = NULL; // head of the list duh
-    add_this->next_block = hdr->first_used_block;
-     if (add_this->next_block != NULL) {
-        add_this->next_block->prev_block = add_this;
-    }   
-    hdr->first_used_block = add_this;
 }
 
 /* this function tries to create a new, free block from excess 
- * allocation in the given block, if there is enough of it. if
+ * allocation in the given block allocation, if there is enough of it. if
  * there is, it will shrink size of the given block to just fit
  * its needs, and use the leftover space to create a new block,
  * and add that to the free block list. 
  */
 void release_excess(heap_header_t *hdr, block_info_t *block_info, unsigned int block_size) {
     // this only does anything if the block_size really used is small enough
-    // that it leaves enough room within data_size to hold it, and hold a new block
-    if (block_info->data_size > (block_size + sizeof (block_info_t) + ALIGNMENT)) {
-        // ok, we have room. the new block_info will start at the next 8-byte aligned
-        // address following the bytes actually used by the original block.
-        block_info_t *new_block = (block_info_t *) ALIGN_UP(ADD_BYTES(block_info->data, block_size));
+    // that it leaves enough room within data_size to hold it plus a usable new block
+    //
 
-        // now set up this new block info to use that excess data
-        new_block->data = ADD_BYTES(new_block, sizeof (block_info_t));
-        //new_block->data_size = block_info->data_size - block_size - sizeof (block_info_t);
-        new_block->data_size = ADD_BYTES(block_info->data, block_info->data_size) - new_block->data;
+    if (block_info->data_size >= block_size + sizeof (block_info_t) + ALIGNMENT) {
+
+        // ok, we have room. the new block_info_t will start at the
+        // address following the bytes actually needed by the original block.
+        //
+        block_info_t *new_block = (block_info_t *) ADD_BYTES(block_info,
+                block_size + sizeof (block_info_t));
+
+        // now calculate data size for this new block
+        //
+        new_block->data_size = block_info->data_size - block_size - sizeof (block_info_t);
 
         // the original block info is now made smaller--just enough to hold the actual data
         block_info->data_size = block_size;
@@ -273,59 +292,71 @@ void release_excess(heap_header_t *hdr, block_info_t *block_info, unsigned int b
         add_to_free_list(hdr, new_block);
         DEBUG_PRINT_1("release_excess created new free block of %u bytes\n", new_block->data_size);
     }
+
 }
 
 /* this tries to look through the list of free blocks and see if any can be
  * combined into larger free blocks. time consuming, so we only use this if
  * we have free blocks but can't find one big enough for our needs
- */
+ 
 void consolidate_free_blocks(heap_header_t *hdr) {
-    print_debug_heap_state("starting consolidate", hdr);
-    
-    
-    print_debug_heap_state("leaving consolidate", hdr);
+    //print_debug_heap_state("starting consolidate", hdr);
+
+
+    //print_debug_heap_state("leaving consolidate", hdr);
 }
+ */
 
 /* See the .h for the advertised behavior of this library function.
  * These comments describe the implementation, not the interface.
  *
- * First sanity check the inputs. Exit(1) if obviously crap.
+ * First sanity check the inputs. return if obviously crap.
  *
  *
  */
 void hl_init(void *heap, unsigned int heap_size) {
-    DEBUG_PRINT_2("init_heap--heap hdr size: %lu, block hdr size: %lu\n", sizeof(heap_header_t), sizeof(block_info_t));
-    
+    DEBUG_PRINT_2("init_heap--addr %p, size %u, ", heap, heap_size);
+    DEBUG_PRINT_2("heaphdr size: %lu, blockhdr size: %lu\n", sizeof(heap_header_t), sizeof(block_info_t));
+
     // this would be our non-graceful failure for bad input
     if (heap == NULL || heap_size < MIN_HEAP_SIZE) {
-        exit(1);
+        return;
     }
 
     // so when we start, we have 0 used blocks,
-    // and one free block with size of all available mem
-    // this top level struct goes at base of our allocated mem
-    heap_header_t *hdr = (heap_header_t *) heap;
+    // and one free block with size of all usable mem
+    // this top level struct goes at base of our allocated mem, but
+    // make sure it's aligned.
+    heap_header_t *hdr = (heap_header_t *) ALIGN_UP(heap);
 
     hdr->heap_size = heap_size;
     hdr->first_used_block = NULL;
 
     // right now we have one huge free block. it starts at the
-    // first aligned memory location after the heap header. our 
-    // block info headers are 8 byte aligned, so we just need to 
+    // first aligned memory location after the heap header, and
+    // ends at the last aligned memory block in our heap. our 
+    // block info header structs are 8 byte aligned, so we just need to 
     // make sure the first block starts 8 byte aligned, and everything
     // should work out after that. maybe.
+
+    /* need this?
     char *first_free_byte = ADD_BYTES(heap, sizeof (heap_header_t));
     int misaligned_by = ((uintptr_t) first_free_byte) % ALIGNMENT;
     int skip_bytes = (ALIGNMENT - misaligned_by) % ALIGNMENT;
-    
+ 
     hdr->first_free_block = (block_info_t *) ADD_BYTES(first_free_byte, skip_bytes);
+     */
 
-    hdr->first_free_block->data_size = heap_size - sizeof (heap_header_t) - skip_bytes - sizeof (block_info_t);
-    hdr->first_free_block->prev_block = NULL;
+    hdr->first_free_block = (block_info_t *) ADD_BYTES(hdr, sizeof (heap_header_t));
     hdr->first_free_block->next_block = NULL;
 
-    // data is the pointer to the available user data. starts just after block info
-    hdr->first_free_block->data = ADD_BYTES(hdr->first_free_block, sizeof (block_info_t));
+    // we're going to make sure all blocks are also aligned at their end,
+    // so block merging can work well even after odd-sized allocs. do that with
+    // this first block to star.
+    int hdr_offset = ((char*) hdr) - ((char*) heap);
+    unsigned int max_possible_bytes = heap_size - sizeof (heap_header_t) -
+            sizeof (block_info_t) - hdr_offset - ALIGNMENT;
+    hdr->first_free_block->data_size = (max_possible_bytes / ALIGNMENT) * ALIGNMENT;
 
     print_debug_heap_state("End of hl_init", hdr);
     return;
@@ -334,63 +365,91 @@ void hl_init(void *heap, unsigned int heap_size) {
 /* See the .h for the advertised behavior of this library function.
  * These comments describe the implementation, not the interface.
  *
- * First does sanity check on inputs. Exit(2) if obviously no good.
+ * First does sanity check on inputs. return NULL if obviously no good.
  * The finds the "best" fit of free blocks for this block_size request.
  * If there's extra space in the best fit block, it will use that
  * space to create a new free block.
  */
-void *hl_alloc(void *heap, unsigned int block_size) {
+void *hl_alloc(void *heap, unsigned int alloc_size) {
+    DEBUG_PRINT_1("in hl_alloc, want %u bytes\n", alloc_size);
 
     // input sanity checks
-    if (heap == NULL) exit(2);
-    
-    heap_header_t *hdr = (heap_header_t *) heap;
+    if (heap == NULL || alloc_size < 1) return NULL;
+
+    heap_header_t *hdr = (heap_header_t *) ALIGN_UP(heap);
     print_debug_heap_state("Start of hl_alloc", hdr);
-     
-    // no need to screw around if no mem available or size is 0
-    if (hdr->first_free_block == NULL || block_size < 1) {
+
+    // no need to screw around if no mem available
+    if (hdr->first_free_block == NULL || alloc_size > hdr->heap_size) {
         return NULL;
     }
 
     // assuming we got decent inputs, first find best free block to
-    // allocate.
-    block_info_t *best_block = find_best_free_block(hdr, block_size);
-    
-    // if no block works, consolidate free blocks and try again
-    if (best_block == NULL) {
-        DEBUG_PRINT_1("first try can't find %d bytes\n", block_size);
-        consolidate_free_blocks(hdr);
-        best_block = find_best_free_block(hdr, block_size);
-        
-        //if we still couldn't find an acceptable block, give up
-        if (best_block == NULL) {
-            DEBUG_PRINT_1("hl_alloc can't find %d bytes\n", block_size);
-            return NULL;
+    // allocate. we will only allocate blocks that are multiples of
+    // ALIGNMENT bytes. 
+    unsigned int block_size = ALIGNED_SIZE(alloc_size);
+
+    // look at all free blocks. keep track of which was best and use it.
+    block_info_t *try_this = hdr->first_free_block;
+    block_info_t *prev = NULL;
+    block_info_t *best_block = NULL;
+    block_info_t *best_prev = NULL;
+
+    // for test, try just returning first, not best
+#define DO_BEST 1
+#if DO_BEST
+    unsigned int best_block_size = hdr->heap_size + 1; // bigger than max possible
+    while (try_this != NULL) {
+        if (try_this->data_size >= block_size && try_this->data_size < best_block_size) {
+            best_block = try_this;
+            best_block_size = try_this->data_size;
+            best_prev = prev;
         }
- 
-    // if we found a good block, we have a few things to do.
-    // we'll need to remove that block from the list of free blocks
-    // and add it to the list of used blocks. also we'll see
-    // if there is enough leftover space in that best_block to
-    // create a new free block with.
-    } else {
-        DEBUG_PRINT_2("best_block addr: %p, size: %u\n", best_block, best_block->data_size);
-
-        // so now we've found the best block. if it is big enough to hold
-        // what we need AND still has room for another usable block,
-        // split off that usable portion as a new, free block
-        release_excess(hdr, best_block, block_size);
-
-        // regardless of whether we could create a new block with leftover
-        // space, now remove best_block from free_list and add to used_list
-        remove_from_free_list(hdr, best_block);
-        add_to_used_list(hdr, best_block);
+        prev = try_this;
+        try_this = try_this->next_block;
     }
-    DEBUG_PRINT_1("first used block: %p\n", hdr->first_used_block);
-    DEBUG_PRINT_1("first free block: %p\n", hdr->first_free_block);
-    print_debug_heap_state("End of hl_alloc", hdr);
+#else
+    while (try_this != NULL && best_block == NULL) {
+        if (try_this->data_size >= block_size) {
+            best_block = try_this;
+            best_prev = prev;
+        } else {
+            prev = try_this;
+            try_this = try_this->next_block;
+        }
+    }
+#endif
 
-    return best_block->data;
+    // if we did find a block to use, we also know its previous block. remove
+    // from list of free blocks and add to list of used blocks
+    if (best_block != NULL) {
+        DEBUG_PRINT_2("best_block addr: %p, size: %u\n", best_block, best_block->data_size);
+        if (best_prev == NULL) {
+            // best block was first in list
+            hdr->first_free_block = best_block->next_block;
+        } else {
+            best_prev->next_block = best_block->next_block;
+        }
+
+        // just add at top of list of used blocks
+        best_block->next_block = hdr->first_used_block;
+        hdr->first_used_block = best_block;
+
+        // finally, if there's any extra allocation in this block,
+        // free it up as a new block
+        release_excess(hdr, best_block, block_size);
+        DEBUG_PRINT_3("Successful alloc. Request: %u, alloc'd block: %u at %p\n",
+                alloc_size, best_block->data_size, BLOCK_DATA(best_block));
+    } else {
+        // no block found
+        DEBUG_PRINT_1("hl_alloc can't find %d bytes\n", alloc_size);
+        print_debug_heap_state("End of hl_alloc--fail", hdr);
+        return NULL;
+    }
+
+    print_debug_heap_state("End of hl_alloc--success", hdr);
+
+    return (void *) (BLOCK_DATA(best_block));
 }
 
 /* See the .h for the advertised behavior of this library function.
@@ -398,30 +457,28 @@ void *hl_alloc(void *heap, unsigned int block_size) {
  *
  * we search the list of used blocks for one whose data ptr
  * matches the input block ptr. If there is none matching, 
- * we exit(3). There should be one though, and we move that
+ * do nothing. There should be one though, and we move that
  * block from the used list to the free list. Just returns
  * without action if either arg is null.
  */
 void hl_release(void *heap, void *block) {
     if (heap == NULL) return;
 
-    heap_header_t *hdr = (heap_header_t *) heap;
+    heap_header_t *hdr = (heap_header_t *) ALIGN_UP(heap);
     print_debug_heap_state("Start of hl_release", hdr);
 
-    // we only need to do any work if block != null
-    if (block != NULL) {
+    // we only need to do any work if block looks possible
+    if (block != NULL && (char*) block < ADD_BYTES(hdr, hdr->heap_size)) {
 
         // find the indicated block of memory
         block_info_t *check_block = hdr->first_used_block;
-        while (check_block != NULL && check_block->data != block) {
+        while (check_block != NULL && BLOCK_DATA(check_block) != block) {
             check_block = check_block->next_block;
         }
 
-        if (check_block == NULL) {
-            exit(3);
-        } else {
+        if (check_block != NULL) {
             // remove from used list and add to free list
-            remove_from_used_list(hdr, check_block);
+            remove_from_used_list(hdr, block);
             add_to_free_list(hdr, check_block);
         }
     }
@@ -435,43 +492,49 @@ void hl_release(void *heap, void *block) {
  */
 void *hl_resize(void *heap, void *block, unsigned int new_size) {
     // handle goofball input args first
-    if (heap == NULL) exit(4);
-    
-    heap_header_t *hdr = (heap_header_t *) heap;
+    if (heap == NULL || new_size < 1)
+        return NULL;
+
+    heap_header_t *hdr = (heap_header_t *) ALIGN_UP(heap);
     print_debug_heap_state("Start of hl_resize", hdr);
 
-    if (new_size < 1) return NULL;
-    if (block == NULL) return hl_alloc(heap, new_size);
-    
-    // if we can't find legit block info for the block ptr, exit(5)
+    if (block == NULL)
+        return hl_alloc(heap, new_size);
+
+    // if we can't find legit block info for the block ptr, return
     block_info_t *block_info = get_block_info_for(hdr, block);
-    if (block_info == NULL) exit(5);
-    
+    if (block_info == NULL)
+        DEBUG_PRINT_1("Resize could not find %p\n", block);
+    return NULL;
+
     // OK, now we probably have legit input values. 
     void *return_this = NULL;
-    
+    DEBUG_PRINT_3("Trying to resize %p from %u to %u\n", block_info, block_info->data_size, new_size);
+
+    unsigned int real_new_size = ALIGNED_SIZE(new_size);
+
     if (block_info->data_size == new_size) {
         return_this = block;
-    } else if (new_size > block_info->data_size) {
+    } else if (real_new_size > block_info->data_size) {
         // so we need a bigger block. if we can allocate one, we
         // copy the current data to the new block, free this one,
         // and return the new ptr. if we can't alloc a new block,
         // we return null.
-        void *new_block = hl_alloc(heap, new_size);
+        void *new_block = hl_alloc(heap, real_new_size);
         if (new_block != NULL) {
             memcpy(new_block, block, block_info->data_size);
+            hl_release(heap, block);
         }
-        hl_release(heap, block);
         return_this = new_block;
     } else {
         // if we're here, new_size is less than current size.
         // we will try to create a new free block from the
         // now unused portion of the original allocation,
         // if the reduction was enough to allow that
-        release_excess(hdr, block_info, new_size);
+        release_excess(hdr, block_info, real_new_size);
         return_this = block;
     }
-    
+
     print_debug_heap_state("End of hl_resize", hdr);
     return return_this;
 }
